@@ -1,0 +1,22 @@
+{
+  "name": "scrap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.4.7",
+    "bluebird-retry": "^0.10.1",
+    "express": "latest",
+    "lodash": "^4.17.4",
+    "mongoose": "latest"
+  },
+  "devDependencies": {
+    "mongodb": "latest"
+  }
+}
