@@ -2,49 +2,29 @@ const express = require('express'),
     request = require('request'),
     _ = require('lodash'),
     router = express.Router(),
-    retry = require('bluebird-retry'),
     config = require('../config/config.json'),
     newsModel = require('../models/news.model');
 
-
-router.get('/ver2', (req, res) => {
-  let startPage = 1, maxPages = 100, allResult = [];
-
-  retry(
-      request(_getOptions(startPage), (error, response, body) => {
-        startPage++;
-        if (!error && body.tops.length && startPage <= maxPages) {
-          const topsArray = _.map(body.tops, top => {
-            return {postId: top.Id, url: top.Url, title: top.Title}
-          });
-          return _findOrCreate(topsArray);
-        } else {
-          return Promise.resolve('Done');
-        }
-      })
-  )
-      .then((result) => {
-        res.status(200).send(result);
-      });
-});
-
 router.get('/', (req, res) => {
-  const startPage = 1, maxPages = 100;
-  return Promise.resolve().then(() => {
-    request(_getOptions(startPage), (error, response, body) => {
-      if (!error && body.tops.length && startPage <= maxPages) {
+  const startPage = 4;
+  return new Promise((resolve, reject) => {
+    return request(_getOptions(startPage), (error, response, body) => {
+      if (!error && body.tops.length) {
         const topsArray = _.map(body.tops, top => {
           return {postId: top.Id, url: top.Url, title: top.Title}
         });
-        return newsModel.create(topsArray);
+        resolve(topsArray);
       } else {
-        return Promise.resolve('Done');
+        return res.status(401).json(new Error('No new data'));
       }
-    })
-  }).then((result) => {
-    console.log(' in result', result);
-    res.status(200).send(result);
+    });
   })
+      .then(_createIfNotExist)
+      .then((result) => {
+        if (result && result.length)
+          res.status(200).send(result);
+        return res.status(401).json(new Error('No new data'));
+      });
 });
 
 function _getOptions(page) {
@@ -52,5 +32,15 @@ function _getOptions(page) {
   return {method: 'get', json: true, url: url, gzip: true, headers: config.headers};
 }
 
+function _createIfNotExist(topsArray) {
+  return newsModel.find({}).then((existingTops) => {
+    return topsArray.filter((newTop) => {
+      return !existingTops.some((existingTop) => existingTop.postId == newTop.postId);
+    });
+  })
+      .then((uniqueValues) => {
+        return newsModel.create(uniqueValues);
+      });
+}
 
 module.exports = router;
