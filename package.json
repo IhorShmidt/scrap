@@ -15,6 +15,7 @@
     "mongoose": "latest"
   },
   "devDependencies": {
-    "mongodb": "latest"
+    "mongodb": "latest",
+    "request": "^2.87.0"
   }
 }
